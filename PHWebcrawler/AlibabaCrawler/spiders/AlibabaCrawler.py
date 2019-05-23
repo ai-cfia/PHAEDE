@@ -18,6 +18,7 @@ class AlibabaCrawlerSpider(scrapy.Spider):
         self.driver = webdriver.Chrome(WEBDRIVER_PATH)
         self.product_driver = webdriver.Chrome(WEBDRIVER_PATH)
         self.seller_driver = webdriver.Chrome(WEBDRIVER_PATH)
+        self.origins = dict({})
         self.ships_to_NA = dict({})
 
     def start_requests(self):
@@ -121,7 +122,7 @@ class AlibabaCrawlerSpider(scrapy.Spider):
 
         if (description_tab is not None):
             # obtain the text of product description
-            description = description_tab.getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").strip()
+            description = description_tab.getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").replace("\t", " ").strip()
             description = re.sub(" +", " ", description)
 
         return description
@@ -178,20 +179,24 @@ class AlibabaCrawlerSpider(scrapy.Spider):
 
         # ensure the seller info has been found
         if (seller_info is not None):
-            # first find the seller name
-            seller_name_element = seller_info.find("div", class_="stitle")
+            # extract the seller name
+            seller_name = seller_info.a.text.strip()
 
-            # check if the product has a seller name
-            if (seller_name_element is not None):
-                seller_name = seller_name_element.a.text.strip()
+            if (seller_name in self.origins):
+                origin = self.origins[seller_name]
+            else:
+                # now obtain the seller origin
+                origin_elements = seller_info.find("div", class_="list-item__seller-info").find_all("div", class_="list-item__slash-wrapper")
 
-            # now obtain the seller origin
-            origin_element = seller_info.find("span", class_="location")
-
-            # check if the seller origin is available
-            if (origin_element is not None):
-                # extract the name from the element
-                origin = origin_element.text.strip()
+                # seller origin exists in the second element
+                if (len(origin_elements) > 1):
+                    origin_element = origin_elements[1].find("div")
+                    # check if the seller origin is available
+                    if (origin_element is not None):
+                        # extract the name from the element
+                        if (origin_element.has_attr("title")):
+                            origin = origin_element.get("title")
+                            self.origins[seller_name] = origin
 
             # check if the current seller name in is in the ships to an dict
             if (seller_name in self.ships_to_NA):
@@ -201,11 +206,14 @@ class AlibabaCrawlerSpider(scrapy.Spider):
             else:
                 # if the name isn't in the dict obtain the seller page url
                 # request the seller page
-                if (seller_name_element is not None):
-                    page_response = self.seller_driver.get("http:" + seller_name_element.a["href"])
-                    seller_page = BeautifulSoup(self.seller_driver.page_source, "lxml")
-                    doesShip = self._parse_seller_page(seller_page)
-                    self.ships_to_NA[seller_name] = doesShip
+                page_response = self.seller_driver.get("http:" + seller_info.a["href"])
+                seller_page = BeautifulSoup(self.seller_driver.page_source, "lxml")
+                (doesShip, origin2) = self._parse_seller_page(seller_page)
+                self.ships_to_NA[seller_name] = doesShip
+                # use the origin obtained from seller page
+                if (origin is None):
+                    origin = origin2
+                    self.origins[seller_name] = origin
 
         # now return the extracted seller info
         return (seller_name, origin, doesShip)
@@ -213,6 +221,18 @@ class AlibabaCrawlerSpider(scrapy.Spider):
     def _parse_seller_page(self, seller_page):
         # obtain the trade capabilities pane
         trade_caps = seller_page.find("div", class_="icbu-pc-cpTradeCapability")
+
+        # obtain the div containing company location
+        location_info = seller_page.find("div", class_="com-location")
+
+        # initialize info vars
+        doesShip = None
+        origin = None
+
+        # check if the div was found
+        if (location_info is not None):
+            # obtain the seller origin
+            origin = location_info.text.strip().split(",")[-1].strip()
 
         # check if the pane was found
         if (trade_caps is not None):
@@ -244,11 +264,11 @@ class AlibabaCrawlerSpider(scrapy.Spider):
                 # check if the market info contains North America
                 contains_NA = market_info.find("North America")
                 if (contains_NA != -1):
-                    return "TRUE"
+                    doesShip = True
                 else:
-                    return "FALSE"
+                    doesShip = False
             else:
-                return None
+                doesShip = None
         else:
             # try parsing the trade capabilities from an alternate format
             trade_caps = seller_page.find("div", class_="widget-supplier-trade-market")
@@ -257,11 +277,13 @@ class AlibabaCrawlerSpider(scrapy.Spider):
                 # check if the North American is listed
                 contains_NA = trade_caps.text.upper().find("NORTH AMERICA")
                 if (contains_NA != -1):
-                    return True
+                    doesShip = True
                 else:
-                    return False
+                    doesShip = False
             else:
-                return None
+                doesShip = None
+
+        return (doesShip, origin)
             
     def _parse_search_term(self, url):
         # find where the search terms starts in the url
