@@ -43,3 +43,7 @@ multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
     }
   }
 }
+
+percent <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
+}

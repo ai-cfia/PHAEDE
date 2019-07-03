@@ -1,3 +1,4 @@
+library(plyr)
 library(dplyr)
 library(splitstackshape)
 library(ggplot2)
