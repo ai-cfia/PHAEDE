@@ -11,15 +11,18 @@ bar_words <- words_count %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) +
   geom_col() +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common Words")
 
 # plot word cloud for top 50 most common words
+pal_Grays <- brewer.pal(5, "Greys")
+pal_Grays <- pal_Grays[-(1:2)]
 set.seed(0)
 wordcloud_words <- words %>%
   anti_join(stop_words) %>%
   count(word) %>%
-  with(wordcloud(word, n, max.words = 50))
+  with(wordcloud(word, n, max.words = 50, colors = pal_Grays))
 
 # list the bigrams from all descriptions starting from the most frequent
 bigrams <- descriptions %>% unnest_tokens(bigram, Title_Description, token = "ngrams", n = 2)
@@ -40,6 +43,7 @@ bar_bigrams <- bigrams_united_count %>%
   mutate(bigram = reorder(bigram, n)) %>%
   ggplot(aes(bigram, n)) +
   geom_col() +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common Bigrams")
 
@@ -51,8 +55,9 @@ bigrams_graph <- bigrams_count %>%
 # plot grammar network for top 30 most common bigrams
 set.seed(1)
 grammar_bigrams_graph <- ggraph(bigrams_graph, layout = "fr") +
-  geom_edge_link() +
+  geom_edge_link(color = "darkgrey") +
   geom_node_point(color = "darkslategray4", size = 3) +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   geom_node_text(aes(label = name), vjust = 1.8) #+ ggtitle("Grammar Network of Common Bigrams")
 
@@ -72,6 +77,7 @@ bar_words_high <- words_high_count %>%
   ggplot(aes(word, n)) +
   geom_col(show.legend = FALSE) +
   geom_col(fill = "tomato") +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common High Risk Words")
 
@@ -103,6 +109,7 @@ bar_bigrams_high <- bigrams_high_united_count %>%
   mutate(bigram = reorder(bigram, n)) %>%
   ggplot(aes(bigram, n)) +
   geom_col(fill = "tomato") +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common High Risk Bigrams")
 
@@ -114,8 +121,9 @@ bigrams_high_graph <- bigrams_high_count %>%
 # plot grammar network for top 10 most common high risk bigrams
 set.seed(3)
 grammar_bigrams_high_graph <- ggraph(bigrams_high_graph, layout = "fr") +
-  geom_edge_link() +
+  geom_edge_link(color = "darkgrey") +
   geom_node_point(color = "tomato", size = 3) +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   geom_node_text(aes(label = name), vjust = 1.8) #+ ggtitle("Grammar Network of High Risk Bigrams")
 
@@ -134,6 +142,7 @@ bar_words_low <- words_low_count %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) +
   geom_col(fill = "cyan3") +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common Low Risk Words")
 
@@ -165,6 +174,7 @@ bar_bigrams_low <- bigrams_low_united_count %>%
   mutate(bigram = reorder(bigram, n)) %>%
   ggplot(aes(bigram, n)) +
   geom_col(fill = "cyan3") +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   coord_flip() #+ ggtitle("Common Low Risk Bigrams")
 
@@ -176,8 +186,9 @@ bigrams_low_graph <- bigrams_low_count %>%
 # plot grammar network for top 20 most common low risk bigrams
 set.seed(5)
 grammar_bigrams_low_graph <- ggraph(bigrams_low_graph, layout = "fr") +
-  geom_edge_link() +
+  geom_edge_link(color = "darkgrey") +
   geom_node_point(color = "cyan3", size = 3) +
+  theme_minimal() +
   xlab(NULL) + ylab(NULL) +
   geom_node_text(aes(label = name), vjust = 1.8) #+ ggtitle("Grammar Network of Common Low Risk Bigrams")
 
@@ -201,5 +212,34 @@ png(file = "./diagrams/common_bigrams_high_grammar.png", width = 8, height = 6, 
 plot(grammar_bigrams_high_graph)
 dev.off()
 png(file = "./diagrams/common_bigrams_low_grammar.png", width = 8, height = 6, units = "in", res = 500)
+plot(grammar_bigrams_low_graph)
+dev.off()
+
+# output graphs to pdf
+pdf(file = "./diagrams/common_words.pdf", width = 8, height = 6)
+plot(bar_words)
+dev.off()
+pdf(file = "./diagrams/common_words_high.pdf", width = 8, height = 6)
+plot(bar_words_high)
+dev.off()
+pdf(file = "./diagrams/common_words_low.pdf", width = 8, height = 6)
+plot(bar_words_low)
+dev.off()
+pdf(file = "./diagrams/common_bigrams.pdf", width = 8, height = 6)
+plot(bar_bigrams)
+dev.off()
+pdf(file = "./diagrams/common_bigrams_high.pdf", width = 8, height = 6)
+plot(bar_bigrams_high)
+dev.off()
+pdf(file = "./diagrams/common_bigrams_low.pdf", width = 8, height = 6)
+plot(bar_bigrams_low)
+dev.off()
+pdf(file = "./diagrams/common_bigrams_grammar.pdf", width = 8, height = 6)
+plot(grammar_bigrams_graph)
+dev.off()
+pdf(file = "./diagrams/common_bigrams_high_grammar.pdf", width = 8, height = 6)
+plot(grammar_bigrams_high_graph)
+dev.off()
+pdf(file = "./diagrams/common_bigrams_low_grammar.pdf", width = 8, height = 6)
 plot(grammar_bigrams_low_graph)
 dev.off()
