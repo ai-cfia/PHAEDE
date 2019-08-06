@@ -93,6 +93,9 @@ class AlibabaCrawlerSpider(scrapy.Spider):
             page_response = self.product_driver.get("http:" + URL)
             product_page = BeautifulSoup(self.product_driver.page_source, "lxml")
 
+            # parse the product categories
+            (category1, category2, category3, category4) = self._parse_product_category(product_page)
+
             # parse the product description
             description = self._parse_product_description(product_page)
 
@@ -106,12 +109,39 @@ class AlibabaCrawlerSpider(scrapy.Spider):
             term = self._parse_search_term(response.url)
             
             # generate and return product item
-            return items.Product(Title=title, URL=URL, Description=description,
+            return items.Product(Title=title, URL=URL, Category1=category1,
+                                 Category2=category2, Category3=category3,
+                                 Category4=category4, Description=description,
                                  Price=price_mag, Currency=currency, Unit=unit,
                                  Seller=seller_name, Origin=origin, Ships_To_NA=doesShip,
                                  Search_Term=term)
         else:
             return None
+
+    def _parse_product_category(self, product_page):
+        # obtain the product category spans
+        category1_span = product_page.select("#page-container > div.content-header > div > div > div > ol > li:nth-child(3) > a > span")
+        category2_span = product_page.select("#page-container > div.content-header > div > div > div > ol > li:nth-child(4) > a > span")
+        category3_span = product_page.select("#page-container > div.content-header > div > div > div > ol > li:nth-child(5) > a > span")
+        category4_span = product_page.select("#page-container > div.content-header > div > div > div > ol > li:nth-child(6) > a > span")
+
+        # initialize product categories
+        category1 = None
+        category2 = None
+        category3 = None
+        category4 = None
+
+        # obtain the text of product categories
+        if (category1_span):
+            category1 = " ".join(category1_span[0].getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").replace("\t", " ").split()).strip()
+        if (category2_span):
+            category2 = " ".join(category2_span[0].getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").replace("\t", " ").split()).strip()
+        if (category3_span):
+            category3 = " ".join(category3_span[0].getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").replace("\t", " ").split()).strip()
+        if (category4_span):
+            category4 = " ".join(category4_span[0].getText(separator=" ").replace("\r", " ").replace("\n", " ").replace("\xa0", " ").replace("\t", " ").split()).strip()
+
+        return (category1, category2, category3, category4)
     
     def _parse_product_description(self, product_page):
         # obtain the product description tab

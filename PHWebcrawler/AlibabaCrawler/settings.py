@@ -25,7 +25,7 @@ FEED_FORMAT = "csv"
 
 FEED_URI = "AlibabaCrawler_%(time)s.csv"
 
-FEED_EXPORT_FIELDS = ["Title", "URL", "Description", "Seller", "Origin", "Price", "Currency", "Unit", "Ships_To_NA", "Search_Term"]
+FEED_EXPORT_FIELDS = ["Title", "URL", "Category1", "Category2", "Category3", "Category4", "Description", "Seller", "Origin", "Price", "Currency", "Unit", "Ships_To_NA", "Search_Term"]
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 
