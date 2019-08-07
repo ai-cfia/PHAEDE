@@ -116,6 +116,14 @@ ggplot_risk_rate_missing <- ggplot(data = risk_rate_missing,
   )
 plot(ggplot_risk_rate_missing)
 
+# categories of commodities
+data[(is.na(data$Category1) | data$Category1 == ""), ]$Category1 <- "Missing"
+data_category1 <- as.data.frame(table(data$Category1, useNA = "ifany"))
+plotly_category1 <- plot_ly(data_category1, labels = ~ Var1, values = ~ Freq, type = "pie", textposition = "top center", textinfo = "label+percent") %>%
+  layout(title = "Categories of Commodities",
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
 # output graphs to png
 png(file = "./diagrams/risk_rate_most_observed_countries.png", width = 11, height = 7, units = "in", res = 500)
 plot(ggplot_risk_rate_most_observed_countries)
